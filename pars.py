@@ -138,8 +138,6 @@ def get_page_data(html):
         i += 1
         # write_to_json(data)
     print('Произведено {} записей\n'.format(i))
-def sql_to_str():
-
 
 
 def main():
