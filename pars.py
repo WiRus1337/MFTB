@@ -10,6 +10,7 @@ import json
 
 db_name = 'avito.db'
 table_name = 't_all_divs'
+фильтры = ('core', 'пк', 'комп', 'ryzen', 'ядер', 'системн', 'ферм', 'pc', 'игровой', 'i3', 'i5', 'i7')
 
 
 def get_html(url):
@@ -28,19 +29,29 @@ def get_total_pages(html):
 def check_table(dbname, tablename):
     conn = sqlite3.connect(dbname)
     cursor = conn.cursor()
-    sql = '''CREATE TABLE if not exists {} (
-    "id"    TEXT,
-    "title"	TEXT,
-    "price"	TEXT,
-    "url"	TEXT
-    )'''.format(tablename)
+    if tablename == table_name:
+        sql = '''CREATE TABLE if not exists {} (
+        "id"    TEXT,
+        "title"	TEXT,
+        "price"	TEXT,
+        "url"	TEXT
+        )'''.format(tablename)
+    if tablename == 'test':
+        sql = '''CREATE TABLE if not exists {} (
+        "id"    TEXT,
+        "title"	TEXT,
+        "price"	TEXT,
+        "url"	TEXT,
+        shown   TEXT
+        )
+        '''.format(tablename)
     cursor.execute(sql)
     conn.commit()
 
 
 def write_sqlite(db_name, table_name, data):
-    check_table(db_name, table_name)
-    check_table(db_name, 'test')
+    # check_table(db_name, table_name)
+    # check_table(db_name, 'test')
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
     sql = '''insert into {} values({},'{}','{}','{}')'''.format(table_name, data['id'], data['title'], data['price'],
@@ -65,7 +76,7 @@ def get_page_data(html):
     soup = BeautifulSoup(html, 'lxml')
     divs = soup.find('div', class_='catalog-list')
     ads = divs.find_all('div', class_='item_table')
-    # filt = ('core', 'пк', 'комп', 'ryzen', 'ядер', 'системн', 'ферм', 'pc', 'игровой', 'i3', 'i5', 'i7')
+
     for ad in ads:
         try:
             id = ad.get('data-item-id')
@@ -123,10 +134,7 @@ def temp_to_catalog_divs(db_name, temp_table, res_table):
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
     sql = '''
-    insert into {1}
-    SELECT * from {0} a
-    where a.id not in (
-    select t.id from {1} t)
+    insert into {1} (id, title, price, url ) SELECT * from {0} a where a.id not in (select t.id from {1} t)
     '''.format(temp_table, res_table)
     cursor.execute(sql)
     conn.commit()
@@ -134,16 +142,34 @@ def temp_to_catalog_divs(db_name, temp_table, res_table):
 
 
 # фильтруем резултат
-def filtering():
-    pass
+# def filtering():
+def фильтрование(запрос, фильтры):  # запрос, имя_полного_списка, фильтры                   фильтрование(фильтры = "пк")
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    cursor.execute(запрос)
+    rows = cursor.fetchall()
+    for row in rows:
+        (id, title, price, url, shown) = tuple(row)
+        trigger = 0
+        if shown == 'false':
+            for фильтр in фильтры:
+                if title.lower().find(фильтр) != -1:
+                    trigger += 1
+            if trigger == 0:
+                return title
+
+
+    conn.commit()
+    conn.close()
 
 
 def main():
     """https://www.avito.ru/krasnodar?s_trg=3&q=%D0%BA%D1%80%D0%B5%D1%81%D0%BB%D0%BE+samurai"""
     base_url = "https://avito.ru/krasnodar?"
     page_part = "p="
-    query_par = "&q" + "=geforce+1050"
+    query_par = "&q" + "=geforce+1060"
     check_table(db_name, table_name)
+    check_table(db_name, 'test')
     total_pages = get_total_pages(get_html(base_url + query_par))
     sql_delete_all_rows(db_name, table_name)
     print('Всего найдено страниц {}'.format(total_pages))
@@ -155,7 +181,9 @@ def main():
         html = get_html(url_gen)
         get_page_data(html)
     temp_to_catalog_divs(db_name, table_name, 'test')
-    filtering()
+    запрос = 'select * from {}'.format('test')
+    print( фильтрование(запрос, фильтры))
+    # filtering()
     # запись в БД завершена, можно переходить к выводу информации в каком то виде
 
 
