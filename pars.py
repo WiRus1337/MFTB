@@ -5,8 +5,8 @@
 import sqlite3
 import requests
 from bs4 import BeautifulSoup
-import csv
-import json
+# import csv
+# import json
 
 db_name = 'avito.db'
 table_name = 't_all_divs'
@@ -127,6 +127,7 @@ def get_page_data(html):
         i += 1
         # write_to_json(data)
     print('Произведено {} записей\n'.format(i))
+    
 
 
 # результат парсинга переносим в справочник объявлений
