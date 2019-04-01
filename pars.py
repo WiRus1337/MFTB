@@ -127,7 +127,7 @@ def get_page_data(html):
         i += 1
         # write_to_json(data)
     print('Произведено {} записей\n'.format(i))
-    
+
 
 
 # результат парсинга переносим в справочник объявлений
