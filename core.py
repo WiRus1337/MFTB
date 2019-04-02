@@ -9,13 +9,13 @@ import db
 db_name = 'avito.db'
 table_name = 't_all_divs'
 фильтры = ('core', 'пк', 'комп', 'ryzen', 'ядер', 'системн', 'ферм', 'pc', 'игровой', 'i3', 'i5', 'i7')
-
+base_url = "https://avito.ru/krasnodar?"
+page_part = "p="
 
 def main_():
     """https://www.avito.ru/krasnodar?s_trg=3&q=%D0%BA%D1%80%D0%B5%D1%81%D0%BB%D0%BE+samurai"""
     # описываем параметры запроса
-    base_url = "https://avito.ru/krasnodar?"
-    page_part = "p="
+
     query_par = "&q=" + "geforce+1060+6gb"
 
     db.check_table(db_name)  # создаем таблицы, если их нет
@@ -48,7 +48,7 @@ def main():
         # получаем параметры поиска из БД
         config = db.get_user_config(query)
         c_query_id = int(config[0][0])
-        c_search_query = re.sub(' ', '+', '{}'.format(config[0][1]))
+        c_search_query = str(re.sub(' ', '+', '{}'.format(config[0][1])))
         c_user_id = int(config[0][2])
         if config[0][3] is not None:
             c_filter = re.split(',', config[0][3])
@@ -57,7 +57,22 @@ def main():
     elif re.findall(r'\d*', query)[0] == '':
         print('query is empty')
         exit()
+    url = "{}&q={}".format(base_url, c_search_query)
+    total_pages = prsr.get_total_pages(prsr.get_html(url))
+    print('Всего найдено страниц {}'.format(total_pages))
+    x = int(input('Сколько проверяем страниц? '))
 
+    for i in range(1, x + 1):  # перебираем указаное количество страниц
+        print('страница №  {}'.format(i))
+        url_gen = '{}{}{}{}'.format(base_url, page_part, i, c_search_query)  # формируем запрос
+        print('{}'.format(url_gen))
+        html = prsr.get_html(url_gen)  # получаем HTML страницы
+        # парсим HTML  и записываем в БД
+        data = prsr.get_page_data(html)
+        # print(data)
+        for line in data:
+            print(data[line])
+            db.write_sqlite(db_name='avito.db', table_name='t_all_divs', data=data[line])
 
 
 
