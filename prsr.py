@@ -33,27 +33,6 @@ def get_page_data(html):
             id = ''
         try:
             div = ad.find('div', class_='description').find('h3')
-            s = div.text.lower()
-
-            # print(s, end='')
-            # for f in filt:
-            #     if s.find(f) == -1:
-            #         pass
-            #     elif s.find(f) != -1:
-            #         print('"{}"'.format(f), end=' ')
-            # print('\n')
-            # # print('\n end')
-
-            # flag = False
-            # for f in filt:
-            #     if s.find(f) != -1:
-            #         flag += True
-            #         continue
-            #     else:
-            #         pass
-            # if flag:
-            #     continue
-            # else:
             title = re.sub("'", '', '{}'.format(div.text.strip()))
         except:
             title = ''
@@ -63,17 +42,13 @@ def get_page_data(html):
         except:
             url = ''
         try:
-            price = ad.find('div', class_='about').text.strip()
+            price = ad.find('span', itemprop="price").text.strip()
         except:
             price = ''
         data[i] = {'id': id,
                 'title': title,
                 'price': price,
                 'url': url}
-        # print(data)
-        # write_csv(data)
-
         i += 1
-        # write_to_json(data)
     return data
     print('Произведено {} записей\n'.format(i))

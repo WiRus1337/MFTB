@@ -1,6 +1,6 @@
-# TODO пересмотреть фильтрацию, т.к. некоторые результаты не верно фильтруются
-# TODO реализовать фильтрацию отдельной функцией
-# TODO
+# TODO реализовать фильтрацию
+
+
 import time
 import re
 import prsr
@@ -42,13 +42,14 @@ def main_():
     # запись в БД завершена, можно переходить к выводу информации в каком то виде
 
 
+
 def main():
     query = input('Введите номер запроса ')
     if re.findall(r'\d*', query)[0] != '':
         # получаем параметры поиска из БД
         config = db.get_user_config(query)
         c_query_id = int(config[0][0])
-        c_search_query = str(re.sub(' ', '+', '{}'.format(config[0][1])))
+        c_search_query = str(re.sub(' ', '%20', '{}'.format(config[0][1])))
         c_user_id = int(config[0][2])
         if config[0][3] is not None:
             c_filter = re.split(',', config[0][3])
@@ -58,13 +59,16 @@ def main():
         print('query is empty')
         exit()
     url = "{}&q={}".format(base_url, c_search_query)
-    total_pages = prsr.get_total_pages(prsr.get_html(url))
+    try:
+        total_pages = prsr.get_total_pages(prsr.get_html(url))
+    except:
+        total_pages = prsr.get_total_pages(prsr.get_html(url))
     print('Всего найдено страниц {}'.format(total_pages))
     x = int(input('Сколько проверяем страниц? '))
 
     for i in range(1, x + 1):  # перебираем указаное количество страниц
         print('страница №  {}'.format(i))
-        url_gen = '{}{}{}{}'.format(base_url, page_part, i, c_search_query)  # формируем запрос
+        url_gen = '{}{}{}&q={}'.format(base_url, page_part, i, c_search_query)  # формируем запрос
         print('{}'.format(url_gen))
         html = prsr.get_html(url_gen)  # получаем HTML страницы
         # парсим HTML  и записываем в БД
@@ -72,7 +76,7 @@ def main():
         # print(data)
         for line in data:
             print(data[line])
-            db.write_sqlite(db_name='avito.db', table_name='t_all_divs', data=data[line])
+            db.check_data(db_name='avito.db', table_name=str('query${}'.format(c_query_id)), data=data[line])
 
 
 

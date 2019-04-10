@@ -1,3 +1,14 @@
+# TODO при записи, выполнять проверку на наличие такой записи,
+#  если записи нет, то INSERT,
+#  если запись есть, проверяем есть ли изменения,
+#           если изменений нет, то ничего не меняем,
+#           если изменениея есть, то INSERT
+
+
+
+
+
+
 # import sqlite3
 #
 # con = sqlite3.connect('users.db')
@@ -10,6 +21,8 @@
 
 
 import sqlite3
+
+from datetime import time
 
 db_name = 'avito.db'
 table_name = 't_all_divs'
@@ -25,39 +38,57 @@ def get_user_config(query):
     return rows
 
 
-
-
-
-
-def check_table(dbname):
-    conn = sqlite3.connect(dbname)
+def check_table(db_name, table_name):
+    conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
-    sql = '''CREATE TABLE if not exists t_all_divs (
-        "id"    TEXT,
-        "title"	TEXT,
-        "price"	TEXT,
-        "url"	TEXT
-        )'''
-    cursor.execute(sql)
-    sql = '''CREATE TABLE if not exists test (
+    sql = '''CREATE TABLE if not exists {} (
         "id"    TEXT,
         "title"	TEXT,
         "price"	TEXT,
         "url"	TEXT,
-        shown   TEXT
-        )
-        '''
+        "status"    TEXT,
+        "changes"   TEXT,
+        "datetime"  TEXT
+        )'''.format(table_name)
     cursor.execute(sql)
     conn.commit()
 
 
-def write_sqlite(db_name, table_name, data):
-    # check_table(db_name, table_name)
-    # check_table(db_name, 'test')
+def check_data(db_name, table_name, data):
+    changes = ''
+    check_table(db_name, table_name)
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
-    sql = '''insert into {} values({},'{}','{}','{}')'''.format(table_name, data['id'], data['title'], data['price'],
-                                                                data['url'])
+    sql = "select * from {} where id = {}".format(table_name, data['id'])
+    cursor.execute(sql)
+    conn.commit()
+    rows = cursor.fetchall()
+    if len(rows) != 0:
+        if rows[len(rows)-1][1] != data['title']:
+            changes = changes + ' title '
+        if rows[len(rows)-1][2] != data['price']:
+            changes = changes + ' price '
+    elif len(rows) == 0:
+        write_sqlite(db_name, table_name, data, changes=changes, status='new')
+    print(changes)
+    data['changes'] = changes
+    if changes != '':
+        write_sqlite(db_name, table_name, data, changes=changes, status='changes')
+        print('запись в бд')
+
+
+def write_sqlite(db_name, table_name, data, status, changes):
+    import datetime
+
+    conn = sqlite3.connect(db_name)
+    cursor = conn.cursor()
+    sql = f'''insert into {table_name} values (  {data['id']},
+                                                '{data['title']}',
+                                                '{data['price']}',
+                                                '{data['url']}',
+                                                '{status}',
+                                                '{changes}',
+                                                '{str(datetime.datetime.now())}')'''
     cursor.execute(sql)
     # cursor.execute('insert into {} values(?,?,?,?)', (data['id'], data['title'], data['price'], data['url']))
     conn.commit()
